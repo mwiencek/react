@@ -14,29 +14,9 @@
 var React = require('React');
 var ReactDOM = require('ReactDOM');
 var ReactTestUtils = require('ReactTestUtils');
+var testAllPermutations = require('testAllPermutations');
 
-// Helpers
-var testAllPermutations = function(testCases) {
-  for (var i = 0; i < testCases.length; i += 2) {
-    var renderWithChildren = testCases[i];
-    var expectedResultAfterRender = testCases[i + 1];
-
-    for (var j = 0; j < testCases.length; j += 2) {
-      var updateWithChildren = testCases[j];
-      var expectedResultAfterUpdate = testCases[j + 1];
-
-      var container = document.createElement('div');
-      var d = ReactDOM.render(<div>{renderWithChildren}</div>, container);
-      expectChildren(d, expectedResultAfterRender);
-
-      d = ReactDOM.render(<div>{updateWithChildren}</div>, container);
-      expectChildren(d, expectedResultAfterUpdate);
-    }
-  }
-};
-
-var expectChildren = function(d, children) {
-  var outerNode = ReactDOM.findDOMNode(d);
+var expectChildren = function(outerNode, children) {
   var textNode;
   if (typeof children === 'string') {
     textNode = outerNode.firstChild;
@@ -97,7 +77,7 @@ var expectChildren = function(d, children) {
 describe('ReactMultiChildText', function() {
   it('should correctly handle all possible children for render and update', function() {
     spyOn(console, 'error');
-    testAllPermutations([
+    testAllPermutations(expectChildren, [
       // basic values
       undefined, [],
       null, [],

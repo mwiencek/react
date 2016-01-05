@@ -36,6 +36,7 @@ var ReactMultiChild = require('ReactMultiChild');
 var ReactPerf = require('ReactPerf');
 
 var escapeTextContentForBrowser = require('escapeTextContentForBrowser');
+var getAncestorInfo = require('getAncestorInfo');
 var invariant = require('invariant');
 var isEventSupported = require('isEventSupported');
 var keyOf = require('keyOf');
@@ -541,12 +542,7 @@ ReactDOMComponent.Mixin = {
     this._namespaceURI = namespaceURI;
 
     if (__DEV__) {
-      var parentInfo;
-      if (nativeParent != null) {
-        parentInfo = nativeParent._ancestorInfo;
-      } else if (nativeContainerInfo._tag) {
-        parentInfo = nativeContainerInfo._ancestorInfo;
-      }
+      var parentInfo = getAncestorInfo(nativeParent, nativeContainerInfo);
       if (parentInfo) {
         // parentInfo should always be present except for the top-level
         // component when server rendering

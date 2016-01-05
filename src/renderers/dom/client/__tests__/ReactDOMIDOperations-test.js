@@ -12,8 +12,11 @@
 'use strict';
 
 describe('ReactDOMIDOperations', function() {
+  var ReactDefaultInjection = require('ReactDefaultInjection');
   var ReactDOMIDOperations = require('ReactDOMIDOperations');
   var ReactMultiChildUpdateTypes = require('ReactMultiChildUpdateTypes');
+
+  ReactDefaultInjection.inject();
 
   it('should update innerHTML and preserve whitespace', function() {
     var stubNode = document.createElement('div');

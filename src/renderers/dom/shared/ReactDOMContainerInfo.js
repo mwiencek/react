@@ -25,6 +25,7 @@ function ReactDOMContainerInfo(topLevelWrapper, node) {
     _node: node,
     _tag: node ? node.nodeName.toLowerCase() : null,
     _namespaceURI: node ? node.namespaceURI : null,
+    _nativeNode: node,
   };
   if (__DEV__) {
     info._ancestorInfo = node ?

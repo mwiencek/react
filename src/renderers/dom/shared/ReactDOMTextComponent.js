@@ -14,10 +14,11 @@
 var DOMChildrenOperations = require('DOMChildrenOperations');
 var DOMLazyTree = require('DOMLazyTree');
 var ReactDOMComponentTree = require('ReactDOMComponentTree');
+var ReactDOMFragmentMixin = require('ReactDOMFragmentMixin');
 var ReactPerf = require('ReactPerf');
 
 var escapeTextContentForBrowser = require('escapeTextContentForBrowser');
-var invariant = require('invariant');
+var getAncestorInfo = require('getAncestorInfo');
 var validateDOMNesting = require('validateDOMNesting');
 
 /**
@@ -50,7 +51,9 @@ var ReactDOMTextComponent = function(text) {
   this._commentNodes = null;
 };
 
-Object.assign(ReactDOMTextComponent.prototype, {
+Object.assign(ReactDOMTextComponent.prototype, ReactDOMFragmentMixin, {
+
+  _commentID: 'react-text',
 
   /**
    * Creates the markup for this text node. This node is not intended to have
@@ -67,12 +70,7 @@ Object.assign(ReactDOMTextComponent.prototype, {
     context
   ) {
     if (__DEV__) {
-      var parentInfo;
-      if (nativeParent != null) {
-        parentInfo = nativeParent._ancestorInfo;
-      } else if (nativeContainerInfo != null) {
-        parentInfo = nativeContainerInfo._ancestorInfo;
-      }
+      var parentInfo = getAncestorInfo(nativeParent, nativeContainerInfo);
       if (parentInfo) {
         // parentInfo should always be present except for the top-level
         // component when server rendering
@@ -143,39 +141,6 @@ Object.assign(ReactDOMTextComponent.prototype, {
       }
     }
   },
-
-  getNativeNode: function() {
-    var nativeNode = this._commentNodes;
-    if (nativeNode) {
-      return nativeNode;
-    }
-    if (!this._closingComment) {
-      var openingComment = ReactDOMComponentTree.getNodeFromInstance(this);
-      var node = openingComment.nextSibling;
-      while (true) {
-        invariant(
-          node != null,
-          'Missing closing comment for text component %s',
-          this._domID
-        );
-        if (node.nodeType === 8 && node.nodeValue === ' /react-text ') {
-          this._closingComment = node;
-          break;
-        }
-        node = node.nextSibling;
-      }
-    }
-    nativeNode = [this._nativeNode, this._closingComment];
-    this._commentNodes = nativeNode;
-    return nativeNode;
-  },
-
-  unmountComponent: function() {
-    this._closingComment = null;
-    this._commentNodes = null;
-    ReactDOMComponentTree.uncacheNode(this);
-  },
-
 });
 
 ReactPerf.measureMethods(

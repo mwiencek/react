@@ -22,6 +22,7 @@ var ReactElement = require('ReactElement');
 var ReactFeatureFlags = require('ReactFeatureFlags');
 var ReactInstrumentation = require('ReactInstrumentation');
 var ReactMarkupChecksum = require('ReactMarkupChecksum');
+var ReactNativeComponent = require('ReactNativeComponent');
 var ReactPerf = require('ReactPerf');
 var ReactReconciler = require('ReactReconciler');
 var ReactUpdateQueue = require('ReactUpdateQueue');
@@ -182,6 +183,17 @@ function unmountComponentFromNode(instance, container, safely) {
   }
 }
 
+function getNativeRootInstance(inst) {
+  while (inst && inst._nativeParent) {
+    if (ReactNativeComponent.isFragmentComponent(inst._nativeParent)) {
+      inst = inst._nativeParent;
+    } else {
+      break;
+    }
+  }
+  return inst;
+}
+
 /**
  * True if the supplied DOM node has a direct React-rendered child that is
  * not a React root element. Useful for warning in `render`,
@@ -195,15 +207,18 @@ function unmountComponentFromNode(instance, container, safely) {
 function hasNonRootReactChild(container) {
   var rootEl = getReactRootElementInContainer(container);
   if (rootEl) {
-    var inst = ReactDOMComponentTree.getInstanceFromNode(rootEl);
+    var inst = getNativeRootInstance(
+      ReactDOMComponentTree.getInstanceFromNode(rootEl)
+    );
     return !!(inst && inst._nativeParent);
   }
 }
 
 function getNativeRootInstanceInContainer(container) {
   var rootEl = getReactRootElementInContainer(container);
-  var prevNativeInstance =
-    rootEl && ReactDOMComponentTree.getInstanceFromNode(rootEl);
+  var prevNativeInstance = rootEl && getNativeRootInstance(
+    ReactDOMComponentTree.getInstanceFromNode(rootEl)
+  );
   return (
     prevNativeInstance && !prevNativeInstance._nativeParent ?
     prevNativeInstance : null
@@ -427,9 +442,10 @@ var ReactMount = {
       var prevWrappedElement = prevComponent._currentElement;
       var prevElement = prevWrappedElement.props;
       if (shouldUpdateReactComponent(prevElement, nextElement)) {
-        var publicInst = prevComponent._renderedComponent.getPublicInstance();
         var updatedCallback = callback && function() {
-          callback.call(publicInst);
+          // For ReactDOMFragments, getPublicInstance depends on its children
+          // being mounted.
+          callback.call(prevComponent._renderedComponent.getPublicInstance());
         };
         ReactMount._updateRootComponent(
           prevComponent,
@@ -437,7 +453,7 @@ var ReactMount = {
           container,
           updatedCallback
         );
-        return publicInst;
+        return prevComponent._renderedComponent.getPublicInstance();
       } else {
         ReactMount.unmountComponentAtNode(container);
       }

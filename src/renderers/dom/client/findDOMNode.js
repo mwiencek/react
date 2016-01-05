@@ -14,10 +14,20 @@
 var ReactCurrentOwner = require('ReactCurrentOwner');
 var ReactDOMComponentTree = require('ReactDOMComponentTree');
 var ReactInstanceMap = require('ReactInstanceMap');
+var ReactNativeComponent = require('ReactNativeComponent');
 
 var getNativeComponentFromComposite = require('getNativeComponentFromComposite');
 var invariant = require('invariant');
 var warning = require('warning');
+
+function fragmentWarning() {
+  warning(
+    false,
+    'findDOMNode() will always return null for fragments. Use refs to ' +
+    'access a specific node in the fragment, or call findDOMNode() on ' +
+    'the parent instead.'
+  );
+}
 
 /**
  * Returns the DOM node rendered by this element.
@@ -48,10 +58,26 @@ function findDOMNode(componentOrElement) {
     return componentOrElement;
   }
 
+  if (ReactNativeComponent.isFragmentComponent(componentOrElement)) {
+    if (__DEV__) {
+      fragmentWarning();
+    }
+    return null;
+  }
+
   var inst = ReactInstanceMap.get(componentOrElement);
   if (inst) {
     inst = getNativeComponentFromComposite(inst);
-    return inst ? ReactDOMComponentTree.getNodeFromInstance(inst) : null;
+    if (inst) {
+      if (inst._currentElement.type === 'frag') {
+        if (__DEV__) {
+          fragmentWarning();
+        }
+        return null;
+      }
+      return ReactDOMComponentTree.getNodeFromInstance(inst);
+    }
+    return null;
   }
 
   if (typeof componentOrElement.render === 'function') {

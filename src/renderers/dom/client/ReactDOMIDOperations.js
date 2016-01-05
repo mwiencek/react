@@ -13,6 +13,7 @@
 
 var DOMChildrenOperations = require('DOMChildrenOperations');
 var ReactDOMComponentTree = require('ReactDOMComponentTree');
+var ReactNativeComponent = require('ReactNativeComponent');
 var ReactPerf = require('ReactPerf');
 
 /**
@@ -27,7 +28,12 @@ var ReactDOMIDOperations = {
    * @internal
    */
   dangerouslyProcessChildrenUpdates: function(parentInst, updates) {
-    var node = ReactDOMComponentTree.getNodeFromInstance(parentInst);
+    var node;
+    if (ReactNativeComponent.isFragmentComponent(parentInst)) {
+      node = ReactDOMComponentTree.getNativeParentNode(parentInst);
+    } else {
+      node = ReactDOMComponentTree.getNodeFromInstance(parentInst);
+    }
     DOMChildrenOperations.processUpdates(node, updates);
   },
 };

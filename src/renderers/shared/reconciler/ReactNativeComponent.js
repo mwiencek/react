@@ -17,6 +17,7 @@ var autoGenerateWrapperClass = null;
 var genericComponentClass = null;
 // This registry keeps track of wrapper classes around native tags.
 var tagToComponentClass = {};
+var fragmentComponentClass = null;
 var textComponentClass = null;
 
 var ReactNativeComponentInjection = {
@@ -24,6 +25,9 @@ var ReactNativeComponentInjection = {
   // that can render any kind of tag.
   injectGenericComponentClass: function(componentClass) {
     genericComponentClass = componentClass;
+  },
+  injectFragmentComponentClass: function(componentClass) {
+    fragmentComponentClass = componentClass;
   },
   // This accepts a text component class that takes the text string to be
   // rendered as props.
@@ -62,6 +66,9 @@ function getComponentClassForElement(element) {
  * @return {function} The internal class constructor function.
  */
 function createInternalComponent(element) {
+  if (element.type === 'frag') {
+    return new fragmentComponentClass(element);
+  }
   invariant(
     genericComponentClass,
     'There is no registered component for the tag %s',
@@ -78,6 +85,10 @@ function createInstanceForText(text) {
   return new textComponentClass(text);
 }
 
+function isFragmentComponent(component) {
+  return component instanceof fragmentComponentClass;
+}
+
 /**
  * @param {ReactComponent} component
  * @return {boolean}
@@ -90,6 +101,7 @@ var ReactNativeComponent = {
   getComponentClassForElement: getComponentClassForElement,
   createInternalComponent: createInternalComponent,
   createInstanceForText: createInstanceForText,
+  isFragmentComponent: isFragmentComponent,
   isTextComponent: isTextComponent,
   injection: ReactNativeComponentInjection,
 };

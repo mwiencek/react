@@ -23,6 +23,7 @@ var ReactDOMComponent = require('ReactDOMComponent');
 var ReactDOMComponentTree = require('ReactDOMComponentTree');
 var ReactDOMEmptyComponent = require('ReactDOMEmptyComponent');
 var ReactDOMTreeTraversal = require('ReactDOMTreeTraversal');
+var ReactDOMFragment = require('ReactDOMFragment');
 var ReactDOMTextComponent = require('ReactDOMTextComponent');
 var ReactDefaultBatchingStrategy = require('ReactDefaultBatchingStrategy');
 var ReactEventListener = require('ReactEventListener');
@@ -72,6 +73,10 @@ function inject() {
 
   ReactInjection.NativeComponent.injectTextComponentClass(
     ReactDOMTextComponent
+  );
+
+  ReactInjection.NativeComponent.injectFragmentComponentClass(
+    ReactDOMFragment
   );
 
   ReactInjection.DOMProperty.injectDOMPropertyConfig(HTMLDOMPropertyConfig);

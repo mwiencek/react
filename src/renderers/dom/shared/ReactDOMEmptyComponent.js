@@ -23,6 +23,7 @@ var ReactDOMEmptyComponent = function(instantiate) {
   this._nativeParent = null;
   this._nativeContainerInfo = null;
   this._domID = null;
+  this._topLevelWrapper = null;
 };
 Object.assign(ReactDOMEmptyComponent.prototype, {
   mountComponent: function(
@@ -56,6 +57,9 @@ Object.assign(ReactDOMEmptyComponent.prototype, {
   },
   getNativeNode: function() {
     return ReactDOMComponentTree.getNodeFromInstance(this);
+  },
+  getPublicInstance: function() {
+    return null;
   },
   unmountComponent: function() {
     ReactDOMComponentTree.uncacheNode(this);

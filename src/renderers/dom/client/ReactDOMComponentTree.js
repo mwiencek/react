@@ -13,6 +13,7 @@
 
 var DOMProperty = require('DOMProperty');
 var ReactDOMComponentFlags = require('ReactDOMComponentFlags');
+var ReactNativeComponent = require('ReactNativeComponent');
 
 var invariant = require('invariant');
 
@@ -143,7 +144,7 @@ function getClosestInstanceFromNode(node) {
  */
 function getInstanceFromNode(node) {
   var inst = getClosestInstanceFromNode(node);
-  if (inst != null && inst._nativeNode === node) {
+  if (inst != null) {
     return inst;
   } else {
     return null;
@@ -151,8 +152,8 @@ function getInstanceFromNode(node) {
 }
 
 /**
- * Given a ReactDOMComponent or ReactDOMTextComponent, return the corresponding
- * DOM node.
+ * Given a ReactDOMComponent, ReactDOMTextComponent, or ReactDOMFragment,
+ * return the corresponding DOM node.
  */
 function getNodeFromInstance(inst) {
   // Without this first invariant, passing a non-DOM-component triggers the next
@@ -186,10 +187,23 @@ function getNodeFromInstance(inst) {
   return inst._nativeNode;
 }
 
+function getNativeParentNode(inst) {
+  var nativeParent = inst._nativeParent;
+  while (nativeParent &&
+         ReactNativeComponent.isFragmentComponent(nativeParent)) {
+    nativeParent = nativeParent._nativeParent;
+  }
+  if (nativeParent) {
+    return nativeParent._nativeNode;
+  }
+  return inst._nativeContainerInfo._nativeNode;
+}
+
 var ReactDOMComponentTree = {
   getClosestInstanceFromNode: getClosestInstanceFromNode,
   getInstanceFromNode: getInstanceFromNode,
   getNodeFromInstance: getNodeFromInstance,
+  getNativeParentNode: getNativeParentNode,
   precacheChildNodes: precacheChildNodes,
   precacheNode: precacheNode,
   uncacheNode: uncacheNode,

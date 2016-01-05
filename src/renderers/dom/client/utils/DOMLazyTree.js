@@ -68,6 +68,18 @@ var insertTreeBefore = createMicrosoftUnsafeLocalFunction(
 );
 
 function replaceChildWithTree(oldNode, newTree) {
+  if (Array.isArray(oldNode)) {
+    var openingComment = oldNode[0];
+    var closingComment = oldNode[1];
+    while (true) {
+      var node = openingComment.nextSibling;
+      openingComment.parentNode.removeChild(node);
+      if (node === closingComment) {
+        break;
+      }
+    }
+    oldNode = openingComment;
+  }
   oldNode.parentNode.replaceChild(newTree.node, oldNode);
   insertTreeChildren(newTree);
 }

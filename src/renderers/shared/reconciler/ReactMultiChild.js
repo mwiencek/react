@@ -28,14 +28,15 @@ var invariant = require('invariant');
  * @param {number} toIndex Destination index.
  * @private
  */
-function makeInsertMarkup(markup, afterNode, toIndex) {
+function makeInsertMarkup(child, afterNode, markup) {
   // NOTE: Null values reduce hidden classes.
   return {
     type: ReactMultiChildUpdateTypes.INSERT_MARKUP,
+    child: child,
     content: markup,
     fromIndex: null,
     fromNode: null,
-    toIndex: toIndex,
+    toIndex: child._mountIndex,
     afterNode: afterNode,
   };
 }
@@ -51,6 +52,7 @@ function makeMove(child, afterNode, toIndex) {
   // NOTE: Null values reduce hidden classes.
   return {
     type: ReactMultiChildUpdateTypes.MOVE_EXISTING,
+    child: child,
     content: null,
     fromIndex: child._mountIndex,
     fromNode: ReactReconciler.getNativeNode(child),
@@ -310,6 +312,7 @@ var ReactMultiChild = {
       var lastIndex = 0;
       var nextIndex = 0;
       var lastPlacedNode = null;
+      var firstPlacedNode = null;
       for (name in nextChildren) {
         if (!nextChildren.hasOwnProperty(name)) {
           continue;
@@ -343,6 +346,9 @@ var ReactMultiChild = {
         }
         nextIndex++;
         lastPlacedNode = ReactReconciler.getNativeNode(nextChild);
+        if (!firstPlacedNode) {
+          firstPlacedNode = lastPlacedNode;
+        }
       }
       // Remove children that are no longer present.
       for (name in removedNodes) {
@@ -397,7 +403,7 @@ var ReactMultiChild = {
      * @protected
      */
     createChild: function(child, afterNode, mountImage) {
-      return makeInsertMarkup(mountImage, afterNode, child._mountIndex);
+      return makeInsertMarkup(child, afterNode, mountImage);
     },
 
     /**

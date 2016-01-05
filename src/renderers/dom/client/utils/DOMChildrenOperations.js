@@ -14,19 +14,31 @@
 var DOMLazyTree = require('DOMLazyTree');
 var Danger = require('Danger');
 var ReactMultiChildUpdateTypes = require('ReactMultiChildUpdateTypes');
+var ReactNativeComponent = require('ReactNativeComponent');
 var ReactPerf = require('ReactPerf');
 
 var createMicrosoftUnsafeLocalFunction = require('createMicrosoftUnsafeLocalFunction');
 var setInnerHTML = require('setInnerHTML');
 var setTextContent = require('setTextContent');
 
-function getNodeAfter(parentNode, node) {
-  // Special case for text components, which return [open, close] comments
-  // from getNativeNode.
+function getNodeAfter(parentNode, node, inst) {
+  // Special case for fragment and text components, which return [open, close]
+  // comments from getNativeNode.
   if (Array.isArray(node)) {
     node = node[1];
   }
-  return node ? node.nextSibling : parentNode.firstChild;
+  if (node) {
+    return node.nextSibling;
+  }
+  // If `node` is null, get the first child node of the fragment (after the
+  // opening comment) or DOM node.
+  if (ReactNativeComponent.isFragmentComponent(inst._nativeParent)) {
+    node = inst._nativeParent._nativeNode;
+    if (node) {
+      return node.nextSibling;
+    }
+  }
+  return parentNode.firstChild;
 }
 
 /**
@@ -52,7 +64,7 @@ function insertLazyTreeChildAt(parentNode, childTree, referenceNode) {
 
 function moveChild(parentNode, childNode, referenceNode) {
   if (Array.isArray(childNode)) {
-    moveDelimitedText(parentNode, childNode[0], childNode[1], referenceNode);
+    moveDelimitedMarkup(parentNode, childNode[0], childNode[1], referenceNode);
   } else {
     insertChildAt(parentNode, childNode, referenceNode);
   }
@@ -62,20 +74,20 @@ function removeChild(parentNode, childNode) {
   if (Array.isArray(childNode)) {
     var closingComment = childNode[1];
     childNode = childNode[0];
-    removeDelimitedText(parentNode, childNode, closingComment);
+    removeDelimitedMarkup(parentNode, childNode, closingComment);
     parentNode.removeChild(closingComment);
   }
   parentNode.removeChild(childNode);
 }
 
-function moveDelimitedText(
+function moveDelimitedMarkup(
   parentNode,
   openingComment,
   closingComment,
   referenceNode
 ) {
   var node = openingComment;
-  while (true) {
+  while (node) {
     var nextNode = node.nextSibling;
     insertChildAt(parentNode, node, referenceNode);
     if (node === closingComment) {
@@ -85,7 +97,7 @@ function moveDelimitedText(
   }
 }
 
-function removeDelimitedText(parentNode, startNode, closingComment) {
+function removeDelimitedMarkup(parentNode, startNode, closingComment) {
   while (true) {
     var node = startNode.nextSibling;
     if (node === closingComment) {
@@ -115,9 +127,9 @@ function replaceDelimitedText(openingComment, closingComment, stringText) {
       // Set the text content of the first node after the opening comment, and
       // remove all following nodes up until the closing comment.
       setTextContent(nodeAfterComment, stringText);
-      removeDelimitedText(parentNode, nodeAfterComment, closingComment);
+      removeDelimitedMarkup(parentNode, nodeAfterComment, closingComment);
     } else {
-      removeDelimitedText(parentNode, openingComment, closingComment);
+      removeDelimitedMarkup(parentNode, openingComment, closingComment);
     }
   }
 }
@@ -130,6 +142,8 @@ var DOMChildrenOperations = {
   dangerouslyReplaceNodeWithMarkup: Danger.dangerouslyReplaceNodeWithMarkup,
 
   replaceDelimitedText: replaceDelimitedText,
+
+  removeDelimitedMarkup: removeDelimitedMarkup,
 
   /**
    * Updates a component's children by processing a series of updates. The
@@ -146,14 +160,14 @@ var DOMChildrenOperations = {
           insertLazyTreeChildAt(
             parentNode,
             update.content,
-            getNodeAfter(parentNode, update.afterNode)
+            getNodeAfter(parentNode, update.afterNode, update.child)
           );
           break;
         case ReactMultiChildUpdateTypes.MOVE_EXISTING:
           moveChild(
             parentNode,
             update.fromNode,
-            getNodeAfter(parentNode, update.afterNode)
+            getNodeAfter(parentNode, update.afterNode, update.child)
           );
           break;
         case ReactMultiChildUpdateTypes.SET_MARKUP:
